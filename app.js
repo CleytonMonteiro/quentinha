@@ -15,15 +15,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app); // Inicializa a Autenticação
-const provider = new GoogleAuthProvider(); // Provedor do Google
-
-// Tabela de Preços Fixos
-const precos = {
-    quentinha: 15.00,
-    suco_500ml: 3.00,
-    suco_1litro: 5.00
-};
+const auth = getAuth(app); 
+const provider = new GoogleAuthProvider(); 
 
 // Elementos da tela
 const loginScreen = document.getElementById('loginScreen');
@@ -43,24 +36,27 @@ const statusMes = document.getElementById('statusMes');
 let valorTotalMesAtual = 0;
 let mesAnoAtual = "";
 
-// --- SISTEMA DE LOGIN ---
+// --- SISTEMA DE PREÇOS FIXOS ---
+const precos = {
+    quentinha: 15.00,
+    suco_500ml: 3.00,
+    suco_1litro: 5.00
+};
 
-// Escuta as mudanças de estado (logado ou deslogado)
+// --- SISTEMA DE LOGIN ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        // Opcional: Você pode colocar um bloqueio visual aqui também, mas o Firestore já barra outros emails
         console.log("Logado como:", user.email);
         loginScreen.style.display = "none";
         appScreen.style.display = "block";
         dataPedido.valueAsDate = new Date();
-        carregarResumoMes(); // Só carrega os dados DEPOIS de logar
+        carregarResumoMes(); // Carrega os pedidos do mês
     } else {
         loginScreen.style.display = "block";
         appScreen.style.display = "none";
     }
 });
 
-// Ação do botão de Login
 btnLogin.addEventListener('click', () => {
     signInWithPopup(auth, provider)
         .catch((error) => {
@@ -69,7 +65,6 @@ btnLogin.addEventListener('click', () => {
         });
 });
 
-// Ação do botão de Sair
 btnSair.addEventListener('click', () => {
     signOut(auth).then(() => {
         alert("Você saiu da sua conta.");
@@ -88,6 +83,7 @@ formPedido.addEventListener('submit', async (e) => {
     const [ano, mes, dia] = data.split('-');
     const mesAno = `${mes}-${ano}`;
 
+    // Usa os preços fixos lá de cima
     let valorSuco = 0;
     if (tipoSuco === '500ml') valorSuco = precos.suco_500ml;
     if (tipoSuco === '1 Litro') valorSuco = precos.suco_1litro;
@@ -111,7 +107,7 @@ formPedido.addEventListener('submit', async (e) => {
         carregarResumoMes(); 
     } catch (error) {
         console.error("Erro ao salvar: ", error);
-        alert('❌ Erro ao salvar. Verifique se você está logado com o e-mail correto.');
+        alert('❌ Erro ao salvar. Verifique se você está logado com o e-mail autorizado.');
     }
 });
 
@@ -133,13 +129,22 @@ async function carregarResumoMes() {
         listaHistorico.innerHTML = ''; 
 
         if (querySnapshot.empty) {
-            listaHistorico.innerHTML = '<li class="item-historico vazio">Nenhum pedido neste mês.</li>';
+            listaHistorico.innerHTML = '<li class="item-historico vazio">Nenhum pedido neste mês ainda.</li>';
             totalMesText.innerText = "R$ 0,00";
             valorTotalMesAtual = 0;
         } else {
+            let pedidosDoMes = [];
+
+            // Coloca os pedidos numa lista
             querySnapshot.forEach((doc) => {
-                const pedido = doc.data();
-                const idPedido = doc.id; 
+                pedidosDoMes.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Ordena os pedidos pela data (mais recente no topo)
+            pedidosDoMes.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+            // Desenha os pedidos na tela
+            pedidosDoMes.forEach((pedido) => {
                 somaTotal += pedido.total_dia;
 
                 const li = document.createElement('li');
@@ -151,7 +156,7 @@ async function carregarResumoMes() {
                         <span>${dataFormatada} - ${pedido.qtd_quentinhas}x Qnt | ${pedido.tamanho_suco}</span>
                         <strong>R$ ${pedido.total_dia.toFixed(2).replace('.', ',')}</strong>
                     </div>
-                    <button class="btn-excluir" data-id="${idPedido}">🗑️</button>
+                    <button class="btn-excluir" data-id="${pedido.id}">🗑️</button>
                 `;
                 listaHistorico.appendChild(li);
             });
@@ -160,6 +165,7 @@ async function carregarResumoMes() {
             totalMesText.innerText = `R$ ${somaTotal.toFixed(2).replace('.', ',')}`;
         }
 
+        // Verifica se a fatura do mês já foi paga
         const pagamentoRef = doc(db, "pagamentos_mensais", filtroMesAno);
         const pagamentoSnap = await getDoc(pagamentoRef);
 
