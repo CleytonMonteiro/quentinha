@@ -20,9 +20,9 @@ const provider = new GoogleAuthProvider(); // Provedor do Google
 
 // Tabela de Preços Fixos
 const precos = {
-    quentinha: 18.00,
-    suco_500ml: 5.00,
-    suco_1litro: 8.00
+    quentinha: 15.00,
+    suco_500ml: 3.00,
+    suco_1litro: 5.00
 };
 
 // Elementos da tela
