@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Quentinhas</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007bff">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3448/3448006.png">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🍲 Controle de Almoço</h1>
+        </header>
+
+        <section class="dashboard card">
+            <h2>Resumo do Mês Atual</h2>
+            <div class="valores">
+                <p class="total" id="totalMes">R$ 0,00</p>
+                <span id="statusMes" class="status em-aberto">Fatura em Aberto</span>
+            </div>
+            <button id="btnPagarMes" class="btn-success">Registrar Pagamento do Mês</button>
+        </section>
+
+        <section class="novo-pedido card">
+            <h3>Registrar Quentinha de Hoje</h3>
+            <form id="formPedido">
+                <div class="form-group">
+                    <label for="dataPedido">Data</label>
+                    <input type="date" id="dataPedido" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="qtdQuentinhas">Quantidade de Quentinhas</label>
+                    <input type="number" id="qtdQuentinhas" min="1" value="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="tamanhoSuco">Adicionar Suco?</label>
+                    <select id="tamanhoSuco">
+                        <option value="Nenhum">Só a(s) Quentinha(s)</option>
+                        <option value="500ml">Suco 500ml</option>
+                        <option value="1 Litro">Suco 1 Litro</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-primary">Salvar Pedido</button>
+            </form>
+        </section>
+
+        <section class="historico card">
+            <h3>Últimos Pedidos</h3>
+            <ul id="listaHistorico">
+                <li class="item-historico vazio">Aguardando conexão com o banco de dados...</li>
+            </ul>
+        </section>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
