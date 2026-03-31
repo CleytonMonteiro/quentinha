@@ -40,7 +40,7 @@ let mesAnoAtual = "";
 const precos = {
     quentinha: 15.00,
     suco_500ml: 3.00,
-    suco_1litro: 5.00
+    suco_1litro: 6.00
 };
 
 // --- SISTEMA DE LOGIN ---
