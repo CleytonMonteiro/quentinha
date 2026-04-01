@@ -35,9 +35,9 @@ let valorTotalMesAtual = 0;
 let mesAnoAtual = "";
 
 const precos = {
-    quentinha: 18.00,
-    suco_500ml: 5.00,
-    suco_1litro: 8.00
+    quentinha: 15.00,
+    suco_500ml: 3.00,
+    suco_1litro: 6.00
 };
 
 // --- CONFIGURAÇÃO INICIAL DO FILTRO DE MÊS ---
