@@ -12,12 +12,15 @@
     <link rel="stylesheet" href="style.css">
     
     <style>
-        /* Estilos rápidos para a tela de login e o cabeçalho */
         #loginScreen { text-align: center; margin-top: 50px; }
         #loginScreen button { background-color: #4285F4; margin-top: 20px; font-size: 1.1rem;}
         #loginScreen button:hover { background-color: #357ae8; }
         .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         #btnSair { width: auto; padding: 8px 15px; background-color: #dc3545; font-size: 0.9rem;}
+        
+        /* Estilo para o seletor de mês */
+        .filtro-mes { margin-bottom: 15px; text-align: center; }
+        .filtro-mes input { width: auto; display: inline-block; padding: 5px 10px; font-size: 1.1rem; text-align: center; font-weight: bold; color: var(--primary-color);}
     </style>
 </head>
 <body>
@@ -35,7 +38,11 @@
             </header>
 
             <section class="dashboard card">
-                <h2>Resumo do Mês Atual</h2>
+                <div class="filtro-mes">
+                    <label for="mesFiltro" style="display:none;">Mês:</label>
+                    <input type="month" id="mesFiltro">
+                </div>
+
                 <div class="valores">
                     <p class="total" id="totalMes">R$ 0,00</p>
                     <span id="statusMes" class="status em-aberto">Fatura em Aberto</span>
@@ -44,7 +51,7 @@
             </section>
 
             <section class="novo-pedido card">
-                <h3>Registrar Quentinha de Hoje</h3>
+                <h3>Registrar Quentinha</h3>
                 <form id="formPedido">
                     <div class="form-group">
                         <label for="dataPedido">Data</label>
@@ -70,7 +77,7 @@
             </section>
 
             <section class="historico card">
-                <h3>Últimos Pedidos</h3>
+                <h3>Histórico do Mês</h3>
                 <ul id="listaHistorico">
                     <li class="item-historico vazio">Aguardando conexão...</li>
                 </ul>
@@ -78,6 +85,6 @@
         </div>
     </div>
 
-    <script type="module" src="app.js?v=2"></script>
+    <script type="module" src="app.js?v=3"></script>
 </body>
 </html>

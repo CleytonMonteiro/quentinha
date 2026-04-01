@@ -1,9 +1,7 @@
-// Importando Firestore e Authentication via CDN
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, query, where, doc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-// Suas configurações do Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAfQhKV5vc0O6QKaLL9saeeTSv-5PZJMXg",
   authDomain: "quentinha-71837.firebaseapp.com",
@@ -18,7 +16,6 @@ const db = getFirestore(app);
 const auth = getAuth(app); 
 const provider = new GoogleAuthProvider(); 
 
-// Elementos da tela
 const loginScreen = document.getElementById('loginScreen');
 const appScreen = document.getElementById('appScreen');
 const btnLogin = document.getElementById('btnLogin');
@@ -32,25 +29,36 @@ const totalMesText = document.getElementById('totalMes');
 const listaHistorico = document.getElementById('listaHistorico');
 const btnPagarMes = document.getElementById('btnPagarMes');
 const statusMes = document.getElementById('statusMes');
+const mesFiltro = document.getElementById('mesFiltro'); // NOVO ELEMENTO
 
 let valorTotalMesAtual = 0;
 let mesAnoAtual = "";
 
-// --- SISTEMA DE PREÇOS FIXOS ---
 const precos = {
-    quentinha: 15.00,
-    suco_500ml: 3.00,
-    suco_1litro: 6.00
+    quentinha: 18.00,
+    suco_500ml: 5.00,
+    suco_1litro: 8.00
 };
 
-// --- SISTEMA DE LOGIN ---
+// --- CONFIGURAÇÃO INICIAL DO FILTRO DE MÊS ---
+const hoje = new Date();
+const mesAtualStr = String(hoje.getMonth() + 1).padStart(2, '0');
+const anoAtualStr = hoje.getFullYear();
+// O input type="month" exige o formato AAAA-MM
+mesFiltro.value = `${anoAtualStr}-${mesAtualStr}`;
+
+// Sempre que o usuário trocar o mês no seletor, recarrega a tela
+mesFiltro.addEventListener('change', () => {
+    carregarResumoMes();
+});
+
+
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        console.log("Logado como:", user.email);
         loginScreen.style.display = "none";
         appScreen.style.display = "block";
         dataPedido.valueAsDate = new Date();
-        carregarResumoMes(); // Carrega os pedidos do mês
+        carregarResumoMes(); 
     } else {
         loginScreen.style.display = "block";
         appScreen.style.display = "none";
@@ -58,22 +66,14 @@ onAuthStateChanged(auth, (user) => {
 });
 
 btnLogin.addEventListener('click', () => {
-    signInWithPopup(auth, provider)
-        .catch((error) => {
-            console.error("Erro ao fazer login:", error);
-            alert("Erro ao tentar fazer login com o Google.");
-        });
+    signInWithPopup(auth, provider).catch(error => console.error("Erro no login", error));
 });
 
 btnSair.addEventListener('click', () => {
-    signOut(auth).then(() => {
-        alert("Você saiu da sua conta.");
-    }).catch((error) => {
-        console.error("Erro ao sair:", error);
-    });
+    signOut(auth).catch(error => console.error("Erro ao sair", error));
 });
 
-// --- LÓGICA DE SALVAR O PEDIDO ---
+
 formPedido.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -83,7 +83,6 @@ formPedido.addEventListener('submit', async (e) => {
     const [ano, mes, dia] = data.split('-');
     const mesAno = `${mes}-${ano}`;
 
-    // Usa os preços fixos lá de cima
     let valorSuco = 0;
     if (tipoSuco === '500ml') valorSuco = precos.suco_500ml;
     if (tipoSuco === '1 Litro') valorSuco = precos.suco_1litro;
@@ -104,19 +103,25 @@ formPedido.addEventListener('submit', async (e) => {
         qtdQuentinhasInput.value = 1;
         tamanhoSucoSelect.value = "Nenhum";
         dataPedido.valueAsDate = new Date();
+        
+        // Se eu salvar um pedido para março, mas estiver visualizando março, atualiza a tela
+        // Se eu salvar um pedido para o mês atual, muda o filtro para o mês atual e carrega
+        mesFiltro.value = `${ano}-${mes}`; 
         carregarResumoMes(); 
     } catch (error) {
         console.error("Erro ao salvar: ", error);
-        alert('❌ Erro ao salvar. Verifique se você está logado com o e-mail autorizado.');
+        alert('❌ Erro ao salvar. Verifique se você está logado.');
     }
 });
 
-// --- LÓGICA DE CARREGAR O RESUMO E CHECAR PAGAMENTO ---
 async function carregarResumoMes() {
-    const hoje = new Date();
-    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
-    const anoAtual = hoje.getFullYear();
-    const filtroMesAno = `${mesAtual}-${anoAtual}`;
+    // Agora o sistema não pega o "mês atual" direto, ele pega o mês que está selecionado na tela!
+    const valorSelecionado = mesFiltro.value; 
+    if (!valorSelecionado) return; // Proteção caso o campo fique vazio
+    
+    // Converte de "AAAA-MM" (do HTML) para "MM-AAAA" (do nosso Firebase)
+    const [ano, mes] = valorSelecionado.split('-');
+    const filtroMesAno = `${mes}-${ano}`;
     
     mesAnoAtual = filtroMesAno;
     listaHistorico.innerHTML = '<li class="item-historico vazio">Buscando dados...</li>';
@@ -129,21 +134,18 @@ async function carregarResumoMes() {
         listaHistorico.innerHTML = ''; 
 
         if (querySnapshot.empty) {
-            listaHistorico.innerHTML = '<li class="item-historico vazio">Nenhum pedido neste mês ainda.</li>';
+            listaHistorico.innerHTML = '<li class="item-historico vazio">Nenhum pedido neste mês.</li>';
             totalMesText.innerText = "R$ 0,00";
             valorTotalMesAtual = 0;
         } else {
             let pedidosDoMes = [];
 
-            // Coloca os pedidos numa lista
             querySnapshot.forEach((doc) => {
                 pedidosDoMes.push({ id: doc.id, ...doc.data() });
             });
 
-            // Ordena os pedidos pela data (mais recente no topo)
             pedidosDoMes.sort((a, b) => new Date(b.data) - new Date(a.data));
 
-            // Desenha os pedidos na tela
             pedidosDoMes.forEach((pedido) => {
                 somaTotal += pedido.total_dia;
 
@@ -165,7 +167,6 @@ async function carregarResumoMes() {
             totalMesText.innerText = `R$ ${somaTotal.toFixed(2).replace('.', ',')}`;
         }
 
-        // Verifica se a fatura do mês já foi paga
         const pagamentoRef = doc(db, "pagamentos_mensais", filtroMesAno);
         const pagamentoSnap = await getDoc(pagamentoRef);
 
@@ -183,11 +184,11 @@ async function carregarResumoMes() {
 
     } catch (error) {
         console.error("Erro ao buscar dados: ", error);
-        listaHistorico.innerHTML = '<li class="item-historico vazio" style="color: red;">Erro de permissão. Você logou com o e-mail autorizado?</li>';
+        listaHistorico.innerHTML = '<li class="item-historico vazio" style="color: red;">Erro ao carregar os dados.</li>';
     }
 }
 
-// --- LÓGICA DE EXCLUIR O PEDIDO ---
+
 listaHistorico.addEventListener('click', async (e) => {
     if (e.target.classList.contains('btn-excluir')) {
         const idParaDeletar = e.target.getAttribute('data-id');
@@ -203,12 +204,12 @@ listaHistorico.addEventListener('click', async (e) => {
     }
 });
 
-// --- LÓGICA DE PAGAR A FATURA DO MÊS ---
+
 btnPagarMes.addEventListener('click', async () => {
-    if (valorTotalMesAtual === 0) return alert("Não há pedidos para pagar!");
+    if (valorTotalMesAtual === 0) return alert("Não há pedidos para pagar neste mês!");
 
     const valorFormatado = valorTotalMesAtual.toFixed(2).replace('.', ',');
-    if (confirm(`Deseja fechar a fatura de R$ ${valorFormatado}?`)) {
+    if (confirm(`Deseja fechar a fatura de R$ ${valorFormatado} referente a ${mesAnoAtual}?`)) {
         const hoje = new Date();
         const dataPagamento = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
 
@@ -219,16 +220,15 @@ btnPagarMes.addEventListener('click', async () => {
                 data_pagamento: dataPagamento,
                 status: "Pago"
             });
-            alert("🎉 Pagamento registrado!");
+            alert("🎉 Pagamento registrado com sucesso!");
             carregarResumoMes(); 
         } catch (error) {
             console.error("Erro ao fechar fatura: ", error);
-            alert("Erro de permissão ao registrar pagamento.");
+            alert("Erro ao registrar pagamento.");
         }
     }
 });
 
-// --- REGISTRO DO SERVICE WORKER (PWA) ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(err => console.error(err));
